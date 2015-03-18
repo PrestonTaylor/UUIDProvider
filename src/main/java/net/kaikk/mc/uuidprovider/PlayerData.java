@@ -8,7 +8,7 @@ class PlayerData {
 	int lastCheck;
 	
 	PlayerData(UUID uuid, String name) {
-		this(uuid, name, (int) (System.currentTimeMillis()/1000));
+		this(uuid, name, DataStore.epoch());
 	}
 	
 	PlayerData(UUID uuid, String name, int lastCheck) {
@@ -18,6 +18,6 @@ class PlayerData {
 	}
 	
 	boolean check() {
-		return (((int) (System.currentTimeMillis()/1000))-this.lastCheck < 3196800); // 37 days
+		return (DataStore.epoch()-this.lastCheck < 3196800); // 37 days
 	}
 }

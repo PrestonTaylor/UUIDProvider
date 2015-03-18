@@ -58,7 +58,7 @@ class DataStore {
 			Statement statement = this.db.createStatement();
 			
 			// delete cache data older than 37 days
-			statement.executeUpdate("DELETE FROM uuidcache WHERE lastcheck < "+(((int) (System.currentTimeMillis()/1000))-3196800));
+			statement.executeUpdate("DELETE FROM uuidcache WHERE lastcheck < "+(epoch()-3196800));
 			
 			// load cache data from database
 			ResultSet results = statement.executeQuery("SELECT * FROM uuidcache");
@@ -113,7 +113,7 @@ class DataStore {
 			this.dbCheck();
 			
 			Statement statement = this.db.createStatement();
-			ResultSet results = statement.executeQuery("SELECT * FROM uuidcache WHERE name=\""+name+"\" AND lastcheck>"+(((int) (System.currentTimeMillis()/1000))-3196800)+" LIMIT 1");
+			ResultSet results = statement.executeQuery("SELECT * FROM uuidcache WHERE name=\""+name+"\" AND lastcheck>"+(epoch()-3196800)+" LIMIT 1");
 			
 			if(results.next()) {
 				PlayerData playerData = new PlayerData(toUUID(results.getBytes(1)), results.getString(2), results.getInt(3));
@@ -134,7 +134,7 @@ class DataStore {
 			this.dbCheck();
 			
 			Statement statement = this.db.createStatement();
-			ResultSet results = statement.executeQuery("SELECT * FROM uuidcache WHERE uuid="+UUIDtoHexString(uuid)+" AND lastcheck>"+(((int) (System.currentTimeMillis()/1000))-3196800));
+			ResultSet results = statement.executeQuery("SELECT * FROM uuidcache WHERE uuid="+UUIDtoHexString(uuid)+" AND lastcheck>"+(epoch()-3196800));
 			
 			if(results.next()) {
 				PlayerData playerData = new PlayerData(toUUID(results.getBytes(1)), results.getString(2), results.getInt(3));
@@ -169,5 +169,9 @@ class DataStore {
 	public static String UUIDtoHexString(UUID uuid) {
 		if (uuid==null) return "0x0";
 		return "0x"+org.apache.commons.lang.StringUtils.leftPad(Long.toHexString(uuid.getMostSignificantBits()), 16, "0")+org.apache.commons.lang.StringUtils.leftPad(Long.toHexString(uuid.getLeastSignificantBits()), 16, "0");
+	}
+	
+	public static int epoch() {
+		return (int) (System.currentTimeMillis()/1000);
 	}
 }
