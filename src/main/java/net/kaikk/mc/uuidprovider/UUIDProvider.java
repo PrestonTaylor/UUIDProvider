@@ -16,11 +16,11 @@ import org.bukkit.plugin.java.JavaPlugin;
 public class UUIDProvider extends JavaPlugin {
 	public final EventListener eventListener = new EventListener();
 	static UUIDProvider instance;
-	static ConcurrentHashMap<String,PlayerData> cachedPlayersName;
-	static ConcurrentHashMap<UUID,PlayerData> cachedPlayersUUID;
+	static ConcurrentHashMap<String,PlayerData> cachedPlayersName = new ConcurrentHashMap<String,PlayerData>();
+	static ConcurrentHashMap<UUID,PlayerData> cachedPlayersUUID = new ConcurrentHashMap<UUID,PlayerData>();
 	
-	static ArrayList<String> cachedNullPlayersName;
-	static ArrayList<UUID> cachedNullPlayersUUID;
+	static ArrayList<String> cachedNullPlayersName = new ArrayList<String>();
+	static ArrayList<UUID> cachedNullPlayersUUID = new ArrayList<UUID>();
 	
 	static Method getUniqueId;
 	static Method getPlayerByUUID;
@@ -40,10 +40,6 @@ public class UUIDProvider extends JavaPlugin {
         } catch (Exception e) {
         	getUniqueId=null;
         	getPlayerByUUID=null;
-        	cachedPlayersName = new ConcurrentHashMap<String,PlayerData>();
-        	cachedPlayersUUID = new ConcurrentHashMap<UUID,PlayerData>();
-        	cachedNullPlayersName = new ArrayList<String>();
-        	cachedNullPlayersName = new ArrayList<String>();
         	
         	try {
 				ds=new DataStore(this, config.dbUrl, config.dbUsername, config.dbPassword);
