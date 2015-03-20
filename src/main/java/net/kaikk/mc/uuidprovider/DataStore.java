@@ -150,6 +150,17 @@ class DataStore {
 		return null;
 	}
 	
+	synchronized void clearCache() {
+		try {
+			this.dbCheck();
+			
+			Statement statement = this.db.createStatement();
+			statement.executeUpdate("TRUNCATE uuidcache");
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+	
 	public static UUID toUUID(byte[] bytes) {
 	    if (bytes.length != 16) {
 	        throw new IllegalArgumentException();
