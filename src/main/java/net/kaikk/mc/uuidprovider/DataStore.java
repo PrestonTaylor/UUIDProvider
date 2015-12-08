@@ -15,11 +15,11 @@ class DataStore {
 	private String password;
 	protected Connection db = null;
 
-	DataStore(UUIDProvider instance, String url, String username, String password) throws Exception {
+	DataStore(UUIDProvider instance) throws Exception {
 		this.instance=instance;
-		this.dbUrl = url;
-		this.username = username;
-		this.password = password;
+		this.dbUrl = "jdbc:mysql://"+instance.config.dbHostname+"/"+instance.config.dbDatabase;
+		this.username = instance.config.dbUsername;
+		this.password = instance.config.dbPassword;
 		
 		try {
 			//load the java driver for mySQL
@@ -42,7 +42,7 @@ class DataStore {
 			// Creates tables on the database
 			statement.executeUpdate("CREATE TABLE IF NOT EXISTS uuidcache ("
 					+ "  uuid binary(16) NOT NULL,"
-					+ "  name varchar(64) NOT NULL,"
+					+ "  name char(16) NOT NULL,"
 					+ "  lastcheck int(11) NOT NULL,"
 					+ "  PRIMARY KEY (uuid),"
 					+ "  KEY name (name));");
@@ -58,17 +58,17 @@ class DataStore {
 			Statement statement = this.db.createStatement();
 			
 			// delete cache data older than 37 days
-			statement.executeUpdate("DELETE FROM uuidcache WHERE lastcheck < "+(epoch()-3196800));
+			statement.executeUpdate("DELETE FROM uuidcache WHERE lastcheck < "+(Utils.epoch()-3196800));
 			
 			// load cache data from database
 			ResultSet results = statement.executeQuery("SELECT * FROM uuidcache");
 			while(results.next()) {
-				PlayerData playerData = new PlayerData(toUUID(results.getBytes(1)), results.getString(2), results.getInt(3));
-				UUIDProvider.cachedPlayersUUID.put(playerData.uuid, playerData);
-				UUIDProvider.cachedPlayersName.put(playerData.name, playerData);
+				PlayerData playerData = new PlayerData(Utils.toUUID(results.getBytes(1)), results.getString(2), results.getInt(3));
+				instance.cachedPlayersUUID.put(playerData.uuid, playerData);
+				instance.cachedPlayersName.put(new CIString(playerData.name), playerData);
 			}
 			
-			this.instance.getLogger().info("Cached "+UUIDProvider.cachedPlayersUUID.size()+" players.");
+			this.instance.getLogger().info("Cached "+instance.cachedPlayersUUID.size()+" players.");
 		} catch(Exception e) {
 			this.instance.getLogger().severe("Unable to read database data. Details: \n"+e.getMessage());
 			throw e;
@@ -96,30 +96,30 @@ class DataStore {
 		}
 	}
 	
-	synchronized void addData(PlayerData playerData) {
+	void addData(PlayerData playerData) {
 		try {
 			this.dbCheck();
 			
 			Statement statement = this.db.createStatement();
-			statement.executeUpdate("INSERT INTO uuidcache VALUES("+UUIDtoHexString(playerData.uuid)+", \""+playerData.name+"\", "+playerData.lastCheck+") ON DUPLICATE KEY UPDATE name=\""+playerData.name+"\", lastcheck="+playerData.lastCheck);
+			statement.executeUpdate("INSERT INTO uuidcache VALUES("+Utils.UUIDtoHexString(playerData.uuid)+", \""+playerData.name+"\", "+playerData.lastCheck+") ON DUPLICATE KEY UPDATE uuid="+Utils.UUIDtoHexString(playerData.uuid)+", name=\""+playerData.name+"\", lastcheck="+playerData.lastCheck);
 
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
 	}
 	
-	synchronized PlayerData getPlayerData(String name) {
+	PlayerData getPlayerData(String name) {
 		try {
 			this.dbCheck();
 			
 			Statement statement = this.db.createStatement();
-			ResultSet results = statement.executeQuery("SELECT * FROM uuidcache WHERE name=\""+name+"\" AND lastcheck>"+(epoch()-3196800)+" LIMIT 1");
+			ResultSet results = statement.executeQuery("SELECT * FROM uuidcache WHERE name=\""+name+"\" AND lastcheck>"+(Utils.epoch()-3196800)+" LIMIT 1");
 			
 			if(results.next()) {
-				PlayerData playerData = new PlayerData(toUUID(results.getBytes(1)), results.getString(2), results.getInt(3));
+				PlayerData playerData = new PlayerData(Utils.toUUID(results.getBytes(1)), results.getString(2), results.getInt(3));
 				// cache result
-				UUIDProvider.cachedPlayersUUID.put(playerData.uuid, playerData);
-				UUIDProvider.cachedPlayersName.put(playerData.name, playerData);
+				instance.cachedPlayersUUID.put(playerData.uuid, playerData);
+				instance.cachedPlayersName.put(new CIString(playerData.name), playerData);
 				return playerData;
 			}
 		} catch (SQLException e) {
@@ -129,18 +129,18 @@ class DataStore {
 		return null;
 	}
 	
-	synchronized PlayerData getPlayerData(UUID uuid) {
+	PlayerData getPlayerData(UUID uuid) {
 		try {
 			this.dbCheck();
 			
 			Statement statement = this.db.createStatement();
-			ResultSet results = statement.executeQuery("SELECT * FROM uuidcache WHERE uuid="+UUIDtoHexString(uuid)+" AND lastcheck>"+(epoch()-3196800));
+			ResultSet results = statement.executeQuery("SELECT * FROM uuidcache WHERE uuid="+Utils.UUIDtoHexString(uuid)+" AND lastcheck>"+(Utils.epoch()-3196800));
 			
 			if(results.next()) {
-				PlayerData playerData = new PlayerData(toUUID(results.getBytes(1)), results.getString(2), results.getInt(3));
+				PlayerData playerData = new PlayerData(Utils.toUUID(results.getBytes(1)), results.getString(2), results.getInt(3));
 				// cache result
-				UUIDProvider.cachedPlayersUUID.put(playerData.uuid, playerData);
-				UUIDProvider.cachedPlayersName.put(playerData.name, playerData);
+				instance.cachedPlayersUUID.put(playerData.uuid, playerData);
+				instance.cachedPlayersName.put(new CIString(playerData.name), playerData);
 				return playerData;
 			}
 		} catch (SQLException e) {
@@ -150,7 +150,7 @@ class DataStore {
 		return null;
 	}
 	
-	synchronized void clearCache() {
+	void clearCache() {
 		try {
 			this.dbCheck();
 			
@@ -161,28 +161,4 @@ class DataStore {
 		}
 	}
 	
-	public static UUID toUUID(byte[] bytes) {
-	    if (bytes.length != 16) {
-	        throw new IllegalArgumentException();
-	    }
-	    int i = 0;
-	    long msl = 0;
-	    for (; i < 8; i++) {
-	        msl = (msl << 8) | (bytes[i] & 0xFF);
-	    }
-	    long lsl = 0;
-	    for (; i < 16; i++) {
-	        lsl = (lsl << 8) | (bytes[i] & 0xFF);
-	    }
-	    return new UUID(msl, lsl);
-	}
-	
-	public static String UUIDtoHexString(UUID uuid) {
-		if (uuid==null) return "0x0";
-		return "0x"+org.apache.commons.lang.StringUtils.leftPad(Long.toHexString(uuid.getMostSignificantBits()), 16, "0")+org.apache.commons.lang.StringUtils.leftPad(Long.toHexString(uuid.getLeastSignificantBits()), 16, "0");
-	}
-	
-	public static int epoch() {
-		return (int) (System.currentTimeMillis()/1000);
-	}
 }

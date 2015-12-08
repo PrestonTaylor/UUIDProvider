@@ -1,44 +1,22 @@
 package net.kaikk.mc.uuidprovider;
 
-import java.io.File;
-import java.io.IOException;
+import org.bukkit.plugin.java.JavaPlugin;
 
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 
-class Config {
-	final static String configFilePath = "plugins" + File.separator + "UUIDProvider" + File.separator + "config.yml";
-	private File configFile;
-	FileConfiguration config;
+public class Config {
+	public String dbHostname, dbUsername, dbPassword, dbDatabase;
+	public boolean offlineMode;
 	
-	String dbUrl;
-	String dbUsername;
-	String dbPassword;
-	
-	Config() {
-		this.configFile = new File(configFilePath);
-		this.config = YamlConfiguration.loadConfiguration(this.configFile);
-		this.load();
-	}
-	
-	void load() {
-		this.dbUrl=config.getString("dbUrl", "jdbc:mysql://127.0.0.1/uuidprovider");
-		this.dbUsername=config.getString("dbUsername", "uuidprovider");
-		this.dbPassword=config.getString("dbPassword", "");
+	Config(JavaPlugin instance) {
+		instance.reloadConfig();
+		instance.getConfig().options().copyDefaults(true);
+		instance.saveDefaultConfig();
 		
-		this.save();
-	}
-	
-	void save() {
-		try {
-			this.config.set("dbUrl", this.dbUrl);
-			this.config.set("dbUsername", this.dbUsername);
-			this.config.set("dbPassword", this.dbPassword);
-
-			this.config.save(this.configFile);
-		} catch (IOException e) {
-			UUIDProvider.instance.getLogger().warning("Couldn't create or save config file.");
-			e.printStackTrace();
-		}
+		this.dbHostname=instance.getConfig().getString("MySQL.Hostname");
+		this.dbUsername=instance.getConfig().getString("MySQL.Username");
+		this.dbPassword=instance.getConfig().getString("MySQL.Password");
+		this.dbDatabase=instance.getConfig().getString("MySQL.Database");
+		
+		this.offlineMode=instance.getConfig().getBoolean("OfflineMode");
 	}
 }

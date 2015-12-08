@@ -1,8 +1,13 @@
-name: UUIDProvider
-main: net.kaikk.mc.uuidprovider.UUIDProvider
-version: 1.3
+name: ${project.artifactId}
+main: ${package}.${project.artifactId}
+version: ${project.version}
 author: KaiNoMood
 
 commands:
    uuidprovider:
       description: UUIDProvider commands
+
+permissions:
+    ${project.artifactId}.manage:
+        description: Manage ${project.artifactId}
+        default: op
