@@ -1,8 +1,8 @@
 # UUIDProvider
-A bukkit plugin that provides players UUID support for other plugins.
-This plugin has been tested on Cauldron 1.6.4 and 1.7.10.
+A Sponge plugin that provides players UUID support for other plugins.
 
-All my plugin's builds can be downloaded from http://kaikk.net/mc/#bukkit
+
+
 
 ##Configuration
 You can use this plugin without any configuration, but I recommend a MySQL database in order to enable cache.
@@ -19,7 +19,7 @@ Most important methods:
 
 Please report any issue! Suggestions are well accepted!
 
-##Support my life!
+##Support Kai's life!
 I'm currently unemployed and I'm studying at University (Computer Science).
 I'll be unable to continue my studies soon because I need money.
 If you like this plugin and you run it fine on your server, please <a href='http://kaikk.net/mc/#donate'>consider a donation</a>!
