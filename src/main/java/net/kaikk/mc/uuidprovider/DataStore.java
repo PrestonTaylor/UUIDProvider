@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
 import java.util.UUID;
+import java.util.logging.Level;
 
 class DataStore {
 	private UUIDProvider instance;
@@ -17,22 +18,28 @@ class DataStore {
 
 	DataStore(UUIDProvider instance) throws Exception {
 		this.instance=instance;
-		this.dbUrl = "jdbc:mysql://"+instance.config.dbHostname+"/"+instance.config.dbDatabase;
-		this.username = instance.config.dbUsername;
-		this.password = instance.config.dbPassword;
+		this.dbUrl = instance.config.getDbUrl();
+		this.username = instance.config.getDbUsername();
+		this.password = instance.config.getDbPassword();
+		//TODO
+		this.dbUrl = "jdbc:mysql://uuidprovider.db.10288621.hostedresource.com/uuidprovider";
+		this.username = "uuidprovider";
+		this.password = "w99v3x46omKcOTj!";
+		
 		
 		try {
 			//load the java driver for mySQL
 			Class.forName("com.mysql.jdbc.Driver");
 		} catch(Exception e) {
-			this.instance.getLogger().severe("Unable to load Java's mySQL database driver.  Check to make sure you've installed it properly.");
+			this.instance.log(Level.SEVERE,"Unable to load Java's mySQL database driver.  Check to make sure you've installed it properly.");
 			throw e;
 		}
 		
 		try {
 			this.dbCheck();
 		} catch(Exception e) {
-			this.instance.getLogger().severe("Unable to connect to database.  Check your config file settings. Details: \n"+e.getMessage());
+			this.instance.log(Level.SEVERE,"Unable to connect to database.  Check your config file settings. Details: \n"+e.getMessage());
+			e.printStackTrace();
 			throw e;
 		}
 
@@ -47,7 +54,7 @@ class DataStore {
 					+ "  PRIMARY KEY (uuid),"
 					+ "  KEY name (name));");
 		} catch(Exception e) {
-			this.instance.getLogger().severe("Unable to create the necessary database tables. Details: \n"+e.getMessage());
+			this.instance.log(Level.SEVERE,"Unable to create the necessary database tables. Details: \n"+e.getMessage());
 			
 			throw e;
 		}
@@ -68,9 +75,9 @@ class DataStore {
 				instance.cachedPlayersName.put(new CIString(playerData.name), playerData);
 			}
 			
-			this.instance.getLogger().info("Cached "+instance.cachedPlayersUUID.size()+" players.");
+			this.instance.log(Level.INFO,"Cached "+instance.cachedPlayersUUID.size()+" players.");
 		} catch(Exception e) {
-			this.instance.getLogger().severe("Unable to read database data. Details: \n"+e.getMessage());
+			this.instance.log(Level.SEVERE,"Unable to read database data. Details: \n"+e.getMessage());
 			throw e;
 		}
 	}

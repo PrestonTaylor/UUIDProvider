@@ -8,35 +8,75 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import org.bukkit.Bukkit;
-import org.bukkit.plugin.java.JavaPlugin;
+import org.spongepowered.api.Game;
+import org.spongepowered.api.Sponge;
+import org.spongepowered.api.command.args.GenericArguments;
+import org.spongepowered.api.command.spec.CommandSpec;
+import org.spongepowered.api.event.Listener;
+import org.spongepowered.api.event.game.state.GameInitializationEvent;
+import org.spongepowered.api.plugin.Plugin;
+import org.spongepowered.api.text.Texts;
 
 import com.google.common.collect.Iterables;
+import com.google.inject.Inject;
 
-public class UUIDProvider extends JavaPlugin {
+@Plugin(id = "UUIDProvider", name = "UUIDProvider", version = "1.0")
+public class UUIDProvider {
 	static UUIDProvider instance;
-	
+	@Inject
+	Game game;
 	Config config;
 	DataStore ds;
-	
+	CommandExec exec;
 	Map<CIString,PlayerData> cachedPlayersName = new ConcurrentHashMap<CIString,PlayerData>();
 	Map<UUID,PlayerData> cachedPlayersUUID = new ConcurrentHashMap<UUID,PlayerData>();
 	
-	public void onEnable() {
+	@Listener
+	public void onInitialization(GameInitializationEvent event) {
+		try {
+			PluginClassLoader.addURL("https://json-simple.googlecode.com/files/json-simple-1.1.1.jar");
+		} catch (Exception e) {
+			log(Level.SEVERE, "UUIDProvider dould not load org.json");
+		}
 		instance=this;
-
+		game = Sponge.getGame();
         config=new Config(this); 
-        
     	try {
 			ds=new DataStore(this);
 		} catch (Exception e1) {
-			this.getLogger().severe("A MySQL database is required! UUIDProvider won't work without a MySQL database!");
-			Bukkit.getPluginManager().disablePlugin(this);
+			log(Level.SEVERE,"A MySQL database is required! UUIDProvider won't work without a MySQL database!");
+			//Bukkit.getPluginManager().disablePlugin(this);
 			return;
 		}
-    	this.getCommand(this.getName()).setExecutor(new CommandExec(this));
-		getServer().getPluginManager().registerEvents(new EventListener(this), this);
+    	buildCommands();
+	}
+	
+	private void buildCommands() {
+		exec = new CommandExec(instance);
+        Map getArgs = new HashMap<String, String> (){{put("uuid","uuid");put("name","name");}};
+        CommandSpec getCommand = CommandSpec.builder()
+        		.description(Texts.of("get a thing"))
+        	    .executor(exec::get)
+        	    .arguments(GenericArguments.choices(Texts.of("Get Option"), getArgs), GenericArguments.string(Texts.of("Item to get")))
+        	    .build();
+        
+        CommandSpec clearCacheCommand = CommandSpec.builder()
+        		.description(Texts.of("clear the database/cache"))
+        		.executor(exec::clearCache)
+        		.build();
+        
+		CommandSpec uuidProvderCommand = CommandSpec.builder()
+				.executor(exec)
+				.child(getCommand, "get")
+				.child(clearCacheCommand, "clearcache")
+				.build();
+		
+		game.getCommandManager().register(this, uuidProvderCommand, "uuidprovider");
+		game.getEventManager().registerListeners(this, new EventListener(instance));
+		return;
 	}
 	
 	/** Get the UUID of the specified name, using all available modes <br>
@@ -47,7 +87,7 @@ public class UUIDProvider extends JavaPlugin {
 	
 	/** Get the UUID of the specified name, using the specified mode<br>
 	 * One ore more modes can be specified, delimited by the | operator.<br>
-	 * Example: UUID uuid = get(name, Mode.INTERNAL | Mode.DATABASE); <br>
+	 * Example: UUID uuid = get(name, Mode.INTERNAL | Mode.DATABASE); <br> 
 	 * Thread-safe */
 	public static UUID get(String name, int mode) {
 		if (name.length()>16) {
@@ -75,7 +115,7 @@ public class UUIDProvider extends JavaPlugin {
 		
 		if (Mode.check(Mode.MOJANG, mode)) {
 			// If offline-mode is on, do not request an UUID to Mojang, but generate a new UUID
-			if (instance.config.offlineMode) {
+			if (instance.config.getOfflineMode()) {
 				uuid = Utils.nameToGeneratedUUID(null);
 			} else {
 				// Request to Mojang
@@ -169,7 +209,7 @@ public class UUIDProvider extends JavaPlugin {
 		
 		if (Mode.check(Mode.MOJANG, mode)) {
 			// If offline-mode is on, do not request an UUID to Mojang
-			if (!instance.config.offlineMode) {
+			if (!instance.config.getOfflineMode()) {
 				// Request to Mojang
 				NameFetcher namefetcher = new NameFetcher(Arrays.asList(uuid));
 				try {
@@ -278,4 +318,12 @@ public class UUIDProvider extends JavaPlugin {
 			return (mode & selectedModes) != 0;
 		}
 	}
+	void log(String t) {
+		log(Level.INFO, t);
+	}
+	
+	void log(Level level, String t) {
+		Logger.getGlobal().log(level, t, this);
+	}
+
 }

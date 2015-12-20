@@ -1,25 +1,28 @@
 package net.kaikk.mc.uuidprovider;
 
 import java.util.UUID;
+import java.util.logging.Level;
 
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
-import org.bukkit.event.Listener;
-import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
+import org.spongepowered.api.event.Listener;
+import org.spongepowered.api.event.Order;
+import org.spongepowered.api.event.network.ClientConnectionEvent;
+import org.spongepowered.api.text.Texts;
 
-public class EventListener implements Listener {
+
+public class EventListener {
 	UUIDProvider instance;
 	
 	EventListener(UUIDProvider instance) {
 		this.instance = instance;
 	}
 
-	@EventHandler(priority = EventPriority.LOWEST)
-	void onAsyncPlayerPreLoginEvent(AsyncPlayerPreLoginEvent event) {
-		UUID uuid = UUIDProvider.get(event.getName());
-		if (uuid==null) {
-			event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER, "Invalid UUID or Mojang's servers down. Try later.");
-			instance.getLogger().warning("UUIDProvider couldn't retrieve UUID for "+event.getName());
+	@Listener(order=Order.FIRST, beforeModifications=false)
+	public void onPlayerLogin(ClientConnectionEvent.Auth event) {
+		UUID uuid = event.getProfile().getUniqueId();
+		if (uuid == null) {
+			event.setMessage(Texts.of("Invalid UUID or Mojang's servers down. Try later."));
+			event.setCancelled(true);
+			instance.log(Level.WARNING, "UUIDProvider couldn't retrieve UUID for "+event.getProfile().getName());
 		}
 	}
 }

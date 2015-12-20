@@ -2,6 +2,8 @@ package net.kaikk.mc.uuidprovider;
 
 import java.util.UUID;
 
+import org.apache.commons.lang3.StringUtils;
+
 public class Utils {
 
 	public static UUID toUUID(byte[] bytes) {
@@ -33,7 +35,7 @@ public class Utils {
 	
 	public static String UUIDtoHexString(UUID uuid) {
 		if (uuid==null) return "0x0";
-		return "0x"+org.apache.commons.lang.StringUtils.leftPad(Long.toHexString(uuid.getMostSignificantBits()), 16, "0")+org.apache.commons.lang.StringUtils.leftPad(Long.toHexString(uuid.getLeastSignificantBits()), 16, "0");
+		return "0x"+StringUtils.leftPad(Long.toHexString(uuid.getMostSignificantBits()), 16, "0")+StringUtils.leftPad(Long.toHexString(uuid.getLeastSignificantBits()), 16, "0");
 	}
 	
 	public static int epoch() {
